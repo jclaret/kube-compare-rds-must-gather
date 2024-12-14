@@ -19,42 +19,60 @@ MUSTGATHER_DIR = must-gather-offline
 CURPATH = $(PWD)
 
 # Build the Must-Gather image.
+# make must-gather REGISTRY=quay.io/jclaret REPO=kube-compare-rds VERSION=0.1
 .PHONY: must-gather
 must-gather:
 	@echo "Building Must-Gather image: $(MUSTGATHER_IMAGE)"
 	$(TOOL_BIN) build -t $(MUSTGATHER_IMAGE) -f $(CURPATH)/Containerfile.mustgather .
 
+# Push the Must-Gather image to the registry.
+# podman login quay.io/jclaret -u jclaret
+# make push REGISTRY=quay.io/jclaret REPO=kube-compare-rds VERSION=0.1
+.PHONY: push
+push:
+	@echo "Building and pushing Must-Gather image: $(MUSTGATHER_IMAGE)"
+	$(TOOL_BIN) build -t $(MUSTGATHER_IMAGE) -f $(CURPATH)/Containerfile.mustgather .
+	$(TOOL_BIN) push $(MUSTGATHER_IMAGE)
+
 # Clean the local image.
+# make clean
 .PHONY: clean
 clean:
 	@echo "Cleaning up local image: $(MUSTGATHER_IMAGE)"
 	$(TOOL_BIN) rmi -f $(MUSTGATHER_IMAGE) || true
 
 # Test the Must-Gather image by running --help.
+# make test-help
 .PHONY: test-help
 test-help: must-gather
 	@echo "Testing Must-Gather image (--help)"
 	$(TOOL_BIN) run --rm -it $(MUSTGATHER_IMAGE) --help
 
 # Test the Must-Gather image online (by default)
+# make test-online
 .PHONY: test-online
 test-online: must-gather
 	@echo "Testing Must-Gather image (online)"
 	$(TOOL_BIN) run --rm -it -v /root/.kcli/clusters/hub/auth/kubeconfig:/root/.kube/config:Z $(MUSTGATHER_IMAGE)
 
 # Test the Must-Gather image offline
+# make test-offline
 .PHONY: test-offline
 test-offline: must-gather
 	@echo "Testing Must-Gather image (online)"
 	$(TOOL_BIN) run --rm -it -v /root/.kcli/clusters/hub/auth/kubeconfig:/root/.kube/config:Z -v $(MUSTGATHER_DIR):/must-gather:Z $(MUSTGATHER_IMAGE)
 
 # Display usage if the user runs "make help".
+# make help
 .PHONY: help
 help:
 	@echo "Usage:"
 	@echo "  make must-gather [REGISTRY=<registry>] [REPO=<repository>] [VERSION=<version>]"
+	@echo "  make push [REGISTRY=<registry>] [REPO=<repository>] [VERSION=<version>]"
 	@echo "  make clean"
 	@echo "  make test-help"
+	@echo "  make test-online"
+	@echo "  make test-offline"
 	@echo "Defaults:"
 	@echo "  REGISTRY=$(REGISTRY)"
 	@echo "  REPO=$(REPO)"

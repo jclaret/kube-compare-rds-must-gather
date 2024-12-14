@@ -53,7 +53,10 @@ get_cluster_version() {
 # Function to fetch cluster version from must-gather (Offline Mode)
 get_cluster_version_offline() {
   local must_gather_dir=$1
-  FULL_CLUSTER_VERSION=$(cat "$must_gather_dir/version/version" | grep "Server Version" | awk '{print $3}')
+
+  omc use /must-gather > /dev/null
+
+  FULL_CLUSTER_VERSION=$(omc get clusterversion -o jsonpath='{.items[0].status.desired.version}')
   if [[ -z "$FULL_CLUSTER_VERSION" ]]; then
     error "Unable to determine the OpenShift cluster version from must-gather."
     return 1

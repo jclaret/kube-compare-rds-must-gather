@@ -13,7 +13,7 @@ endif
 
 # Define the image name based on inputs.
 MUSTGATHER_IMAGE = $(REGISTRY)/$(REPO):mustgather-$(VERSION)
-MUSTGATHER_DIR = must-gather-offline
+MUSTGATHER_DIR = ./must-gather-offline
 
 # Define the current working directory.
 CURPATH = $(PWD)
@@ -52,15 +52,19 @@ test-help: must-gather
 # make test-online
 .PHONY: test-online
 test-online: must-gather
-	@echo "Testing Must-Gather image (online)"
+	@echo "Testing Must-Gather image"
 	$(TOOL_BIN) run --rm -it -v /root/.kcli/clusters/hub/auth/kubeconfig:/root/.kube/config:Z $(MUSTGATHER_IMAGE)
 
 # Test the Must-Gather image offline
-# make test-offline
+# make test-offline MUSTGATHER_DIR=must-gather-offline
 .PHONY: test-offline
 test-offline: must-gather
-	@echo "Testing Must-Gather image (online)"
-	$(TOOL_BIN) run --rm -it -v /root/.kcli/clusters/hub/auth/kubeconfig:/root/.kube/config:Z -v $(MUSTGATHER_DIR):/must-gather:Z $(MUSTGATHER_IMAGE)
+	@if [ ! -d "$(MUSTGATHER_DIR)" ]; then \
+		echo "Error: Directory $(MUSTGATHER_DIR) does not exist. Please ensure the must-gather data is available."; \
+		exit 1; \
+	fi
+	@echo "Testing Must-Gather image (offline)"
+	$(TOOL_BIN) run --rm -it -v /root/.kcli/clusters/hub/auth/kubeconfig:/root/.kube/config:Z -v $(MUSTGATHER_DIR):/must-gather:ro,Z $(MUSTGATHER_IMAGE) --offline --must-gather-dir /must-gather
 
 # Display usage if the user runs "make help".
 # make help

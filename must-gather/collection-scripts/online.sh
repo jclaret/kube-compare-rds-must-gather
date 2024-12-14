@@ -38,40 +38,18 @@ run_online() {
   section_title "Running RAN Comparison"
   action "Running RAN comparison"
   echo "   Reference: cnf-features-deploy/ztp/kube-compare-reference/metadata.yaml"
-  if ! oc cluster-compare -r cnf-features-deploy/ztp/kube-compare-reference/metadata.yaml 2>/tmp/ran-error.log; then
-    warning "RAN comparison failed:"
-    while IFS= read -r line; do
-      echo "   - $line"
-    done < /tmp/ran-error.log
-  else
+  if oc cluster-compare -r cnf-features-deploy/ztp/kube-compare-reference/metadata.yaml; then
     success "RAN comparison completed successfully"
+  else
+    warning "RAN comparison failed"
   fi
 
   section_title "Running CORE Comparison"
   action "Running CORE comparison"
   echo "   Reference: telco-reference/telco-core/configuration/reference-crs-kube-compare/metadata.yaml"
-  if ! oc cluster-compare -r telco-reference/telco-core/configuration/reference-crs-kube-compare/metadata.yaml 2>/tmp/core-error.log; then
-    warning "CORE comparison failed:"
-    while IFS= read -r line; do
-      echo "   - $line"
-    done < /tmp/core-error.log
-  else
+  if oc cluster-compare -r telco-reference/telco-core/configuration/reference-crs-kube-compare/metadata.yaml; then
     success "CORE comparison completed successfully"
-  fi
-
-  # Summary
-  section_title "Summary of Results"
-  if [ -s /tmp/ran-error.log ]; then
-    warning "RAN comparison: FAILED"
   else
-    success "RAN comparison: PASSED"
+    warning "CORE comparison failed"
   fi
-
-  if [ -s /tmp/core-error.log ]; then
-    warning "CORE comparison: FAILED"
-  else
-    success "CORE comparison: PASSED"
-  fi
-
-  action "Logs available at: /tmp/gather-log.txt"
 }

@@ -6,32 +6,6 @@
 
 `kube-compare-rds-must-gather` helps validate OpenShift cluster configurations by comparing live cluster state or must-gather dumps against predefined reference configurations. This tool supports CORE and RAN references, enabling streamlined troubleshooting and validation workflows in Telco environments.
 
----
-
-## Reference Guides
-
-### RAN Reference
-
-The RAN reference for different OpenShift versions can be obtained from the following containers:
-
-[version]: registry.redhat.io/openshift4/ztp-site-generate-rhel[version]:v[version]
-
-Extracting the Reference:
-```sh
-podman run --rm --log-driver=none ${pullspec} extract /home/ztp --tar | tar x -C ./out
-```
-
-### CORE Reference
-
-The CORE reference for OpenShift versions can be obtained from the following container:
-
-[version]: registry.redhat.io/openshift4/openshift-telco-core-rds-rhel[version]:v[version]
-
-Extracting the Reference:
-```sh
-podman run --rm ${pullspec} | base64 -d | tar xv -C out
-```
-
 ## Using the kube-compare must-gather Image
 
 ### Help Command
@@ -92,8 +66,33 @@ make test-offline
 ```
 
 NOTE: Before running test-offline, ensure you have a valid must-gather directory in the same path. You can generate one with the following command:
+
 ```sh
 oc adm must-gather --dest-dir must-gather-offline
 ```
 
 This will create a directory called must-gather-offline that can be used for the offline test.
+
+## Reference Guides
+
+### RAN Reference
+
+The RAN reference for different OpenShift versions can be obtained from the following containers:
+
+[version]: registry.redhat.io/openshift4/ztp-site-generate-rhel[version]:v[version]
+
+Extracting the Reference:
+```sh
+podman run --rm --log-driver=none ${pullspec} extract /home/ztp --tar | tar x -C ./out
+```
+
+### CORE Reference
+
+The CORE reference for OpenShift versions can be obtained from the following container:
+
+[version]: registry.redhat.io/openshift4/openshift-telco-core-rds-rhel[version]:v[version]
+
+Extracting the Reference:
+```sh
+podman run --rm ${pullspec} | base64 -d | tar xv -C out
+```

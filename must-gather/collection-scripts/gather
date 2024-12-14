@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Load common functions
+source "$(dirname "$0")/common.sh"
+
 # Default values
 MODE=""
 MUST_GATHER_DIR=""
@@ -10,7 +13,7 @@ usage() {
 Usage: gather [OPTIONS]
 
 Options:
-  --online                  Run must-gather on a connected OpenShift cluster (default if no options are provided).
+  --online                  Run must-gather in online mode (default if no options are provided).
   --offline --must-gather-dir <directory>  Run must-gather offline using the specified directory.
   -h, --help                Show this help message.
 EOF
@@ -31,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     --must-gather-dir)
       MUST_GATHER_DIR=$2
       if [[ -z "$MUST_GATHER_DIR" ]]; then
-        echo "Error: --must-gather-dir requires a directory argument."
+        error "--must-gather-dir requires a directory argument."
         usage
       fi
       shift 2
@@ -40,7 +43,7 @@ while [[ $# -gt 0 ]]; do
       usage
       ;;
     *)
-      echo "Unknown option: $1"
+      error "Unknown argument: $1"
       usage
       ;;
   esac
@@ -53,89 +56,18 @@ fi
 
 # Validate mode and directory for offline
 if [[ "$MODE" == "offline" && -z "$MUST_GATHER_DIR" ]]; then
-  echo "Error: --must-gather-dir is required for offline mode."
+  error "--must-gather-dir is required for offline mode."
   usage
 fi
 
-# Function to fetch the cluster version
-get_cluster_version() {
-  echo "Fetching OpenShift cluster version..."
-  FULL_CLUSTER_VERSION=$(oc get clusterversion -o jsonpath='{.items[0].status.desired.version}')
-  if [[ -z "$FULL_CLUSTER_VERSION" ]]; then
-    echo "Error: Unable to determine the OpenShift cluster version."
-    exit 1
-  fi
-
-  # Extract major.minor version (e.g., 4.14 from 4.14.1)
-  CLUSTER_VERSION=$(echo "$FULL_CLUSTER_VERSION" | awk -F. '{print $1 "." $2}')
-  echo "Cluster version detected: $CLUSTER_VERSION"
-}
-
-# Function to run in online mode
-run_online() {
-  echo "Running must-gather in online mode..."
-
-  # Ensure 'oc' is installed
-  if ! command -v oc &>/dev/null; then
-    echo "Error: 'oc' command not found. Please install the OpenShift CLI."
-    exit 1
-  fi
-
-  # Fetch cluster version
-  get_cluster_version
-
-  # Clone RAN and CORE directories
-  RAN_REPO="https://github.com/openshift-kni/cnf-features-deploy.git"
-  CORE_REPO="https://github.com/openshift-kni/telco-reference.git"
-
-  # Run comparisons
-  echo "Running RAN comparison with data from /tmp/ran-metadata..."
-  git clone $RAN_REPO
-  oc cluster-compare -r cnf-features-deploy/ztp/kube-compare-reference/metadata.yaml || echo "RAN comparison failed."
-
-  echo "Running CORE comparison with data from /tmp/core-metadata..."
-  git clone $CORE_REPO
-  oc cluster-compare -r telco-reference/telco-core/configuration/reference-crs-kube-compare/metadata.yaml || echo "CORE comparison failed."
-}
-
-# Function to run in offline mode
-run_offline() {
-  echo "Running must-gather in offline mode using directory: $MUST_GATHER_DIR"
-
-  # Ensure 'oc' is installed
-  if ! command -v oc &>/dev/null; then
-    echo "Error: 'oc' command not found. Please install the OpenShift CLI."
-    exit 1
-  fi
-
-  # Fetch cluster version
-  get_cluster_version
-
-  # Clone RAN and CORE directories
-  RAN_REPO="https://github.com/openshift-kni/cnf-features-deploy.git"
-  CORE_REPO="https://github.com/openshift-kni/telco-reference.git"
-
-  # Run comparisons
-  echo "Running RAN comparison with data from /tmp/ran-metadata..."
-  git clone $RAN_REPO
-  oc cluster-compare -r cnf-features-deploy/ztp/kube-compare-reference/metadata.yaml -f "must-gather*/*/cluster-scoped-resources","must-gather*/*/namespaces" -R || echo "RAN comparison failed."
-
-  echo "Running CORE comparison with data from /tmp/core-metadata..."
-  git clone $CORE_REPO
-  oc cluster-compare -r telco-reference/telco-core/configuration/reference-crs-kube-compare/metadata.yaml -f "must-gather*/*/cluster-scoped-resources","must-gather*/*/namespaces" -R || echo "CORE comparison failed."
-
-}
-
-# Execute based on mode
-case $MODE in
-  online)
-    run_online
-    ;;
-  offline)
-    run_offline
-    ;;
-  *)
-    echo "Error: Unknown mode. Exiting."
-    exit 1
-    ;;
-esac
+# Execute the appropriate mode
+if [[ "$MODE" == "online" ]]; then
+  source "$(dirname "$0")/online.sh"
+  run_online
+elif [[ "$MODE" == "offline" ]]; then
+  source "$(dirname "$0")/offline.sh"
+  run_offline
+else
+  error "Invalid mode: $MODE"
+  exit 1
+fi

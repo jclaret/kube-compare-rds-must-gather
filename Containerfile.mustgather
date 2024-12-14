@@ -1,6 +1,6 @@
 FROM quay.io/openshift/origin-cli:latest
 
-#
+# install git command
 RUN dnf install git -y
 # copy all collection scripts to /usr/bin
 COPY must-gather/collection-scripts/* /usr/bin/

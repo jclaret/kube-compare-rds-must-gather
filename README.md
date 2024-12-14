@@ -11,6 +11,27 @@
 ### Help Command
 
 ```sh
+oc adm must-gather --image=quay.io/jclaret/kube-compare-rds:mustgather-0.1 -- gather --help
+```
+
+### Online Mode (Default)
+
+```sh
+oc adm must-gather --image=quay.io/jclaret/kube-compare-rds:mustgather-0.1
+```
+
+### Offline Mode
+
+```sh
+podman run --rm -it -v must-gather-dir:/must-gather-data:Z \
+  quay.io/jclaret/kube-compare-rds:mustgather-0.1 --offline --must-gather-dir /must-gather-data
+```
+
+## Using the kube-compare local Imae
+
+### Help Command
+
+```sh
 podman run --rm -it quay.io/jclaret/kube-compare-rds:mustgather-0.1 --help
 ```
 
